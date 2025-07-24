@@ -106,7 +106,7 @@ func ParseAsyncResourceReference(ref string) (*AsyncResourceReferenceURI, error)
 	}
 
 	// Here we check if mode is valid for the given resource type
-	if !slices.Contains(protocolSpecificModes, resourceType) {
+	if !slices.Contains(protocolSpecificModes, mode) {
 		return nil, errors.New("invalid mode for resource type: " + resourceType + ", must be one of " + strings.Join(protocolSpecificModes, ", "))
 	}
 
