@@ -141,3 +141,49 @@ func protocolSpecificResourceList(protocol string) ([]string, error) {
 
 	return resources, nil
 }
+
+func (uri *AsyncResourceReferenceURI) Assemble() (string, error) {
+	if err := uri.Validate(); err != nil {
+		return "", err
+	}
+
+	return uri.Protocol + "://" + uri.Server + "@" + uri.Mode + "/" + uri.Type + "/" + uri.Name, nil
+}
+
+func (uri *AsyncResourceReferenceURI) Validate() error {
+	if uri == nil {
+		return errors.New("URI struct is nil")
+	}
+
+	if !slices.Contains(ValidProtocols, uri.Protocol) {
+		return errors.New("invalid protocol: " + uri.Protocol + ", must be one of " + strings.Join(ValidProtocols, ", "))
+	}
+
+	if uri.Server == "" {
+		return errors.New("server cannot be empty")
+	}
+
+	protocolSpecificResourceTypesAndModes, ok := ValidResourceTypesAndModes[uri.Protocol]
+	if !ok {
+		return errors.New("protocol configuration not found for: " + uri.Protocol)
+	}
+
+	protocolSpecificModes, resourceTypeExists := protocolSpecificResourceTypesAndModes[uri.Type]
+	if !resourceTypeExists {
+		protocolSpecificResources, _ := protocolSpecificResourceList(uri.Protocol)
+		return errors.New("invalid resource type: " + uri.Type + " for protocol " + uri.Protocol + 
+			", must be one of " + strings.Join(protocolSpecificResources, ", "))
+	}
+
+	if !slices.Contains(protocolSpecificModes, uri.Mode) {
+		return errors.New("invalid mode: " + uri.Mode + " for resource type " + uri.Type + 
+			", must be one of " + strings.Join(protocolSpecificModes, ", "))
+	}
+
+	if !isValidResourceName(uri.Name) {
+		return errors.New("invalid resource name: " + uri.Name +
+			", must be alphanumeric, underscores, or dots")
+	}
+
+	return nil
+}
